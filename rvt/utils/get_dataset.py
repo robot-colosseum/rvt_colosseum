@@ -7,6 +7,8 @@ import sys
 import shutil
 import torch
 import clip
+from multiprocessing import Manager, Process
+
 
 from rvt.libs.peract.helpers.utils import extract_obs
 from rvt.utils.rvt_utils import ForkedPdb
@@ -64,9 +66,13 @@ def get_dataset(
         print("WARNING: Setting Clip to None. Will not work if replay not on disk.")
         clip_model = None
 
+    # tasks_rank = tasks[:10] if device==0 else tasks[10:]
+    # print("device and task rank: ", device, tasks_rank)
+
+
     for task in tasks:  # for each task
         # print("---- Preparing the data for {} task ----".format(task), flush=True)
-        EPISODES_FOLDER_TRAIN = f"train/{task}/all_variations/episodes"
+        EPISODES_FOLDER_TRAIN = f"{task}/all_variations/episodes"
         EPISODES_FOLDER_VAL = f"val/{task}/all_variations/episodes"
         data_path_train = os.path.join(DATA_FOLDER, EPISODES_FOLDER_TRAIN)
         data_path_val = os.path.join(DATA_FOLDER, EPISODES_FOLDER_VAL)
@@ -88,6 +94,34 @@ def get_dataset(
                 print(f"remove {test_replay_storage_folder}")
 
         # print("----- Train Buffer -----")
+        # processes = [
+        # Process(
+        #     target=fill_replay,
+        #     args=(
+        #         train_replay_buffer,
+        #         task_parallel,
+        #         train_replay_storage_folder,
+        #         0,
+        #         NUM_TRAIN,
+        #         True,
+        #         DEMO_AUGMENTATION_EVERY_N,
+        #         CAMERAS,
+        #         SCENE_BOUNDS,
+        #         VOXEL_SIZES,
+        #         ROTATION_RESOLUTION,
+        #         False,
+        #         data_path_train,
+        #         EPISODE_FOLDER,
+        #         VARIATION_DESCRIPTIONS_PKL,
+        #         clip_model,
+        #         device,
+        #     ),
+        # )
+        # for task_parallel in tasks]
+        # [t.start() for t in processes]
+        # [t.join() for t in processes]
+
+
         fill_replay(
             replay=train_replay_buffer,
             task=task,
@@ -106,7 +140,7 @@ def get_dataset(
             variation_desriptions_pkl=VARIATION_DESCRIPTIONS_PKL,
             clip_model=clip_model,
             device=device,
-        )
+        ) 
 
         if not only_train:
             # print("----- Test Buffer -----")

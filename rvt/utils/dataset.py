@@ -361,9 +361,9 @@ def fill_replay(
     if disk_exist:
         replay.recover_from_disk(task, task_replay_storage_folder)
     else:
-        print("Filling replay ...")
+        print("Filling replay ... ", task)
         for d_idx in range(start_idx, start_idx + num_demos):
-            print("Filling demo %d" % d_idx)
+            print("Filling demo %d " % d_idx, task)
             demo = get_stored_demo(data_path=data_path, index=d_idx)
 
             # get language goal from disk

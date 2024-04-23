@@ -51,6 +51,21 @@ from rvt.utils.rvt_utils import (
 from rvt.utils.rvt_utils import load_agent as load_agent_state
 
 
+from colosseum.utils.utils import (
+    ObservationConfigExt,
+    check_and_make,
+    name_to_class,
+    save_demo,
+)
+
+from colosseum import (
+    ASSETS_CONFIGS_FOLDER,
+    ASSETS_JSON_FOLDER,
+    TASKS_PY_FOLDER,
+    TASKS_TTM_FOLDER,
+)
+
+
 def load_agent(
     model_path=None,
     peract_official=False,
@@ -214,10 +229,23 @@ def eval(
         if verbose:
             print(f"evaluate on {len(tasks)} tasks: ", tasks)
 
+    # import ipdb; ipdb.set_trace()
+    # tasks = ["basketball_in_hoop_14"]
+
+    
+    task_class_variation_idx = []
+    task_class_base = []
     for task in tasks:
-        if task not in task_files:
-            raise ValueError("Task %s not recognised!." % task)
-        task_classes.append(task_file_to_task_class(task))
+        task_class_base.append('_'.join(task.split('_')[:-1]))
+        if task_class_base[-1] not in task_files:
+            raise ValueError('Task %s not recognised!.' % task)
+        task_class = name_to_class(task_class_base[-1], TASKS_PY_FOLDER) # task_file_to_task_class(task_class_base)
+        task_class_variation_idx.append(int(task.split('_')[-1]))
+        task_classes.append(task_class)
+
+        # if task not in task_files:
+        #     raise ValueError("Task %s not recognised!." % task)
+        # task_classes.append(task_file_to_task_class(task))
 
     eval_env = CustomMultiTaskRLBenchEnv(
         task_classes=task_classes,
@@ -230,6 +258,8 @@ def eval(
         include_lang_goal_in_obs=True,
         time_in_state=True,
         record_every_n=1 if save_video else -1,
+        base_cfg_name=task_class_base,
+        task_class_variation_idx=task_class_variation_idx,
     )
 
     eval_env.eval = True
@@ -251,7 +281,7 @@ def eval(
     rollout_generator = RolloutGenerator(device)
     stats_accumulator = SimpleAccumulator(eval_video_fps=30)
 
-    eval_env.launch()
+    
 
     current_task_id = -1
 
@@ -262,6 +292,7 @@ def eval(
     for task_id in range(num_tasks):
         task_rewards = []
         for ep in range(start_episode, start_episode + eval_episodes):
+            eval_env.launch()
             episode_rollout = []
             generator = rollout_generator.generator(
                 step_signal=step_signal,
@@ -277,6 +308,7 @@ def eval(
             try:
                 for replay_transition in generator:
                     episode_rollout.append(replay_transition)
+
             except StopIteration as e:
                 continue
             except Exception as e:
@@ -296,6 +328,8 @@ def eval(
                 print(
                     f"Evaluating {task_name} | Episode {ep} | Score: {reward} | Episode Length: {len(episode_rollout)} | Lang Goal: {lang_goal}"
                 )
+            eval_env.shutdown()
+            
 
         # report summaries
         summaries = []
@@ -334,7 +368,9 @@ def eval(
         scores.append(task_score)
 
         if save_video:
-            video_image_folder = "./tmp"
+            video_image_folder = f"./tmp/{task_name}"
+            num_succ_video = 2
+            num_fail_video = 2
             record_fps = 25
             record_folder = os.path.join(log_dir, "videos")
             os.makedirs(record_folder, exist_ok=True)
@@ -346,36 +382,38 @@ def eval(
                     video = deepcopy(summary.value)
                     video = np.transpose(video, (0, 2, 3, 1))
                     video = video[:, :, :, ::-1]
-                    if task_rewards[video_cnt] > 99:
-                        video_path = os.path.join(
-                            record_folder,
-                            f"{task_name}_success_{video_success_cnt}.mp4",
+                    if (task_rewards[video_cnt] > 99 and video_success_cnt < num_succ_video) or \
+                        (not task_rewards[video_cnt] > 99 and video_fail_cnt < num_fail_video):
+                        if task_rewards[video_cnt] > 99:
+                            video_path = os.path.join(
+                                record_folder,
+                                f"{task_name}_success_{video_success_cnt}.mp4",
+                            )
+                            video_success_cnt += 1
+                        else:
+                            video_path = os.path.join(
+                                record_folder, f"{task_name}_fail_{video_fail_cnt}.mp4"
+                            )
+                            video_fail_cnt += 1
+                        video_cnt += 1
+                        os.makedirs(video_image_folder, exist_ok=True)
+                        for idx in range(len(video) - 10):
+                            cv2.imwrite(
+                                os.path.join(video_image_folder, f"{idx}.png"), video[idx]
+                            )
+                        images_path = os.path.join(video_image_folder, r"%d.png")
+                        os.system(
+                            "ffmpeg -i {} -vf palettegen palette.png -hide_banner -loglevel error".format(
+                                images_path
+                            )
                         )
-                        video_success_cnt += 1
-                    else:
-                        video_path = os.path.join(
-                            record_folder, f"{task_name}_fail_{video_fail_cnt}.mp4"
+                        os.system(
+                            "ffmpeg -framerate {} -i {} -i palette.png -lavfi paletteuse {} -hide_banner -loglevel error".format(
+                                record_fps, images_path, video_path
+                            )
                         )
-                        video_fail_cnt += 1
-                    video_cnt += 1
-                    os.makedirs(video_image_folder, exist_ok=True)
-                    for idx in range(len(video) - 10):
-                        cv2.imwrite(
-                            os.path.join(video_image_folder, f"{idx}.png"), video[idx]
-                        )
-                    images_path = os.path.join(video_image_folder, r"%d.png")
-                    os.system(
-                        "ffmpeg -i {} -vf palettegen palette.png -hide_banner -loglevel error".format(
-                            images_path
-                        )
-                    )
-                    os.system(
-                        "ffmpeg -framerate {} -i {} -i palette.png -lavfi paletteuse {} -hide_banner -loglevel error".format(
-                            record_fps, images_path, video_path
-                        )
-                    )
-                    os.remove("palette.png")
-                    shutil.rmtree(video_image_folder)
+                        os.remove("palette.png")
+                        shutil.rmtree(video_image_folder)
 
     eval_env.shutdown()
 

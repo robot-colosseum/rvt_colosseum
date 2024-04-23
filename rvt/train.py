@@ -43,6 +43,7 @@ from rvt.utils.peract_utils import (
 def train(agent, dataset, training_iterations, rank=0):
     agent.train()
     log = defaultdict(list)
+    
 
     data_iter = iter(dataset)
     iter_command = range(training_iterations)
@@ -174,6 +175,8 @@ def experiment(rank, cmd_args, devices, port):
     tasks = get_tasks(exp_cfg)
     print("Training on {} tasks: {}".format(len(tasks), tasks))
 
+    DATA_FOLDER='/home/ishika/peract_dir/peract/data/train_100'
+
     t_start = time.time()
     get_dataset_func = lambda: get_dataset(
         tasks,
@@ -210,6 +213,10 @@ def experiment(rank, cmd_args, devices, port):
             renderer_device=device,
             **mvt_cfg,
         ).to(device)
+
+        print('# Trainable RVT Params: %d' % sum(p.numel() for name, p in rvt.named_parameters() if p.requires_grad and 'clip' not in name))
+
+        # import ipdb; ipdb.set_trace()
         if ddp:
             rvt = DDP(rvt, device_ids=[device])
 
@@ -297,4 +304,7 @@ if __name__ == "__main__":
     devices = [int(x) for x in devices]
 
     port = (random.randint(0, 3000) % 3000) + 27000
-    mp.spawn(experiment, args=(cmd_args, devices, port), nprocs=len(devices), join=True)
+    # mp.spawn(experiment, args=(cmd_args, devices, port), nprocs=len(devices), join=True)
+
+    experiment(0, cmd_args, devices, port)
+
