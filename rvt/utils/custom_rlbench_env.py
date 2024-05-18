@@ -21,7 +21,7 @@ from pyrep.const import RenderMode
 from pyrep.errors import IKError, ConfigurationPathError
 from pyrep.objects import VisionSensor, Dummy
 
-from rvt.utils import RLBenchEnv, MultiTaskRLBenchEnv
+from rvt.utils.multitask_rlbench_env import RLBenchEnv, MultiTaskRLBenchEnv
 
 class CustomRLBenchEnv(RLBenchEnv):
 

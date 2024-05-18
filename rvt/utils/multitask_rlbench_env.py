@@ -34,20 +34,69 @@ from colosseum import (
     TASKS_PY_FOLDER,
     TASKS_TTM_FOLDER,
 )
-from colosseum.extensions.environment_ext import EnvironmentExt
-from colosseum.utils.utils import (
+from colosseum.rlbench.extensions.environment import EnvironmentExt
+from colosseum.rlbench.utils import (
     ObservationConfigExt,
     check_and_make,
     name_to_class,
     save_demo,
 )
 from colosseum.variations.utils import safeGetValue
-from colosseum.tools.dataset_generator import get_spreadsheet_config, get_variation_name
+# from colosseum.tools.dataset_generator import get_spreadsheet_config, get_variation_name
 
 # CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 # COLLECTION_STRATEGY_CONFIG = os.path.join(
 #     CURRENT_DIR, "data_collection_strategy.json"
 # )
+
+def get_spreadsheet_config(
+    base_cfg: DictConfig, collection_cfg: Dict[str, Any], spreadsheet_idx: int
+) -> DictConfig:
+    """
+    Creates a new config object based on a base configuration, updated with
+    entries to match the options from the data collection strategy in JSON
+    format for the given spreadsheet index.
+
+    Parameters
+    ----------
+        base_cfg : DictConfig
+            The base configuration for the current task
+        collection_cfg : Dict[str, Any]
+            The data collection strategy parsed from the JSON strategy file
+        spreadsheet_idx : int
+            The index in the spreadsheet to use for the current task variation
+
+    Returns
+    -------
+        DictConfig
+            The new configuration object with the updated options for this
+            variation
+    """
+    spreadsheet_cfg = base_cfg.copy()
+
+    collections_variation_cfg = collection_cfg["strategy"][spreadsheet_idx][
+        "variations"
+    ]
+    for collection_var_cfg in collections_variation_cfg:
+        var_type = collection_var_cfg["type"]
+        var_name = collection_var_cfg["name"]
+        var_enabled = collection_var_cfg["enabled"]
+        for variation_cfg in spreadsheet_cfg.env.scene.factors:
+            if variation_cfg.variation != var_type:
+                continue
+            else:
+                if var_name == "any" or (
+                    "name" in variation_cfg and variation_cfg.name == var_name
+                ):
+                    variation_cfg.enabled = var_enabled
+
+    return spreadsheet_cfg
+
+def get_variation_name(
+    collection_cfg: Dict[str, Any], spreadsheet_idx: int
+) -> bool:
+    return collection_cfg["strategy"][spreadsheet_idx]["variation_name"]
+
 
 
 class MultiTaskRLBenchEnv(MultiTaskEnv):

@@ -43,6 +43,7 @@ export CUB_HOME=$(pwd)/cub-1.10.0
 pip install 'git+https://github.com/facebookresearch/pytorch3d.git@stable'
 ```
 
+--- skip if already done while installing Colosseum ---
 - **Step 4:** Install CoppeliaSim. PyRep requires version **4.1** of CoppeliaSim. Download and unzip CoppeliaSim: 
 - [Ubuntu 16.04](https://www.coppeliarobotics.com/files/CoppeliaSim_Edu_V4_1_0_Ubuntu16_04.tar.xz)
 - [Ubuntu 18.04](https://www.coppeliarobotics.com/files/CoppeliaSim_Edu_V4_1_0_Ubuntu18_04.tar.xz)
@@ -57,6 +58,8 @@ export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT
 export DISLAY=:1.0
 ```
 Remember to source your .bashrc (`source ~/.bashrc`) or  .zshrc (`source ~/.zshrc`) after this.
+--- skip if already done while installing Colosseum ---
+
 
 - **Step 5:** Clone the repository with the submodules using the following command.
 
@@ -72,12 +75,24 @@ pip install -e rvt/libs/RLBench
 pip install -e rvt/libs/YARR 
 pip install -e rvt/libs/peract_colab
 ``` 
+
+## Evaluating on The Colosseum:
  
-- **Step 6:** Download dataset.
-    - For experiments on RLBench, we use [pre-generated dataset](https://drive.google.com/drive/folders/0B2LlLwoO3nfZfkFqMEhXWkxBdjJNNndGYl9uUDQwS1pfNkNHSzFDNGwzd1NnTmlpZXR1bVE?resourcekey=0-jRw5RaXEYRLe2W6aNrNFEQ) provided by [PerAct](https://github.com/peract/peract#download). Please download and place them under `RVT/rvt/data/xxx` where `xxx` is either `train`, `test`, or `val`.  
+### Training RVT on default RLBench dataset
+```
+cd rvt
+bash run_train.sh
+```
 
-    - Additionally, we use the same dataloader as PerAct, which is based on [YARR](https://github.com/stepjam/YARR). YARR creates a replay buffer on the fly which can increase the startup time. We provide an option to directly load the replay buffer from the disk. We recommend using the pre-generated replay buffer (98 GB) as it reduces the startup time. You can either download [replay.tar.xz](https://drive.google.com/file/d/1wOkLk8ymsp3TCFWOPOQLZZJ4OIZXRUjw/view?usp=drive_link) which contains the replay buffer for all tasks or replay buffer for [indidual tasks](https://drive.google.com/drive/folders/1n_vBXEL2lWmJTNxwQIuI_NinAGGhby5m?usp=drive_link). After downloading, uncompress the replay buffer(s) (for example using the command `tar -xf replay.tar.xz`) and place it under `RVT/rvt/replay/replay_xxx` where `xxx` is either `train` or `val`. Note that is useful only if you want to train RVT from scratch and not needed if you want to evaluate the pre-trained model.
-
+### Test RVT on The Colosseum perturbation factor
+```
+min_var_num=0
+max_var_num=500
+total_processes=50
+processes_per_gpu=3
+bash run_eval_variations.sh $min_var_num $max_var_num $total_processes $processes_per_gpu
+```
+This file launches parallel evaluation processes. Adjust the number of processes to run in parallel based on GPU number and size availability. The ```task_list``` can be edited inside ```run_eval_variations.sh``` to run specific task or variation number.
 
 ## Using the library:
 

@@ -51,7 +51,7 @@ from rvt.utils.rvt_utils import (
 from rvt.utils.rvt_utils import load_agent as load_agent_state
 
 
-from colosseum.utils.utils import (
+from colosseum.rlbench.utils import (
     ObservationConfigExt,
     check_and_make,
     name_to_class,
@@ -412,6 +412,7 @@ def eval(
                                 record_fps, images_path, video_path
                             )
                         )
+                        print(f'video saved - {task_name}')
                         os.remove("palette.png")
                         shutil.rmtree(video_image_folder)
 
