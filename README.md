@@ -58,6 +58,7 @@ export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT
 export DISLAY=:1.0
 ```
 Remember to source your .bashrc (`source ~/.bashrc`) or  .zshrc (`source ~/.zshrc`) after this.
+
 --- skip if already done while installing Colosseum ---
 
 
@@ -84,7 +85,7 @@ cd rvt
 bash run_train.sh
 ```
 
-### Test RVT on The Colosseum perturbation factor
+### Test RVT on The Colosseum perturbation factors
 ```
 min_var_num=0
 max_var_num=500
