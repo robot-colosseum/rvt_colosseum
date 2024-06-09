@@ -65,7 +65,7 @@ Remember to source your .bashrc (`source ~/.bashrc`) or  .zshrc (`source ~/.zshr
 - **Step 5:** Clone the repository with the submodules using the following command.
 
 ```
-git clone --recurse-submodules git@github.com:ishikasingh/rvt_colosseum.git && cd RVT && git submodule update --init
+git clone --recurse-submodules git@github.com:robot-colosseum/rvt_colosseum.git && cd rvt_colosseum && git submodule update --init
 ```
 
 Now, locally install RVT and other libraries using the following command. Make sure you are in folder RVT.
