@@ -78,6 +78,10 @@ pip install -e rvt/libs/peract_colab
 ``` 
 
 ## Evaluating on The Colosseum:
+
+### Evaluate on pre-trained RVT baseline
+You can download a [pre-trained](https://drive.google.com/file/d/1Z0-HR7mGjAaPj-9QMj2ALflLMkOmuHNv/view?usp=sharing)
+RVT agent trained on the variation factors from the Colosseum.
  
 ### Training RVT on default RLBench dataset
 ```
